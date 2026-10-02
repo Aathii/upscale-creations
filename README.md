@@ -5,11 +5,12 @@ Company portfolio site. Static (HTML, CSS, JS). No build step. Hosted on Vercel 
 ```
 index.html            home page + the shared logo symbol (#mark)
 content.html          Content page: posts from feed.json, empty state until the first one
-vercel.json           cleanUrls, so content.html is served at /content
+vercel.json           cleanUrls (content.html is served at /content) and cache headers for fonts, media and brand
 css/style.css         black-and-champagne theme; colours are tokens at the top
 js/main.js            intro film, starfield, feed, enquiry form; SITE config at the top
 content/feed.json     videos on the Content page, plus "Client voices" on the home page
-media/work/           portfolio thumbnails + Shastha card film
+media/work/           portfolio stills (.webp) + the hover film for each card
+fonts/                self-hosted fonts; the two "wordmark" files hold only the letters of UPSCALE / CREATIONS
 media/content/        videos referenced by feed.json
 brand/                logo kit (SVG mark, PNG lockups, favicon, social profile image, og.jpg)
 ```
@@ -45,3 +46,11 @@ Append an item to `content/feed.json` and put the file in `media/content/`:
 
 Newest first by `date`. The Content page shows a "first drops" empty state until the first content item,
 and the "Client voices" section stays hidden until the first testimonial exists.
+
+## Performance notes
+
+- Looping animations pause while their section is off screen (`.is-off`, toggled in `js/main.js`).
+- The hero mark's shadow, sheen and satellites use only `transform` / `opacity`, so they run on the compositor.
+  Avoid putting a CSS `filter` on the animated mark or animating `background-position`: both repaint every frame.
+- The starfield draws in batches and is timed in 60ths of a second, so it behaves the same on 120 Hz screens.
+- `media/` and `brand/` are cached for a day. Give a replaced file a new name if it must update at once.

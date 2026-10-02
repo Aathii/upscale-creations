@@ -13,7 +13,7 @@
   --line-2: rgba(255, 240, 215, .15);
   --text: #F4F0E8;
   --muted: #A9A49B;
-  --dim: #6E6A62;
+  --dim: #857F76;
   --champagne: #F6E2B0;
   --gold: #E2BF7E;
   --bronze: #A87D3E;
@@ -32,6 +32,13 @@
   --ease: cubic-bezier(.2, .75, .1, 1);
   --ease-in-out: cubic-bezier(.65, 0, .35, 1);
 }
+
+/* Fonts are served from /fonts. The two wordmark files hold only the letters of UPSCALE and CREATIONS. */
+@font-face { font-family: "Geist"; src: url("../fonts/geist.woff2") format("woff2"); font-weight: 300 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Geist Mono"; src: url("../fonts/geist-mono.woff2") format("woff2"); font-weight: 400 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Instrument Serif"; src: url("../fonts/instrument-serif-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Bodoni Moda"; src: url("../fonts/bodoni-moda-wordmark.woff2") format("woff2"); font-weight: 400 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Syncopate"; src: url("../fonts/syncopate-wordmark.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
 
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: calc(var(--nav-h) + 12px); }
@@ -246,15 +253,16 @@ em {
 .brand:hover .brand-mark { transform: rotate(-12deg) scale(1.05); }
 .brand-word {
   display: inline-flex; flex-direction: column; align-items: center; line-height: 1;
-  font: 500 17px/1 var(--didone);
-  letter-spacing: .26em;
-  padding-left: .26em;
+  font: 600 18px/1 var(--didone);
+  font-variation-settings: "opsz" 10;
+  letter-spacing: .24em;
+  padding-left: .24em;
 }
 .brand-word small {
-  margin-top: 6px;
-  font: 400 7.5px/1 var(--wide);
-  letter-spacing: .7em;
-  padding-left: .7em;
+  margin-top: 7px;
+  font: 700 8px/1 var(--wide);
+  letter-spacing: .62em;
+  padding-left: .62em;
   color: var(--gold);
 }
 .nav-links {
@@ -405,31 +413,33 @@ em {
 @keyframes breathe { 50% { transform: scale(1.06); opacity: .8; } }
 .sphere-float { position: absolute; inset: 0; animation: float 9s ease-in-out infinite; }
 @keyframes float { 50% { transform: translateY(-12px); } }
-.sphere {
-  width: 100%; height: 100%; overflow: visible;
-  transform: translate3d(var(--px, 0px), var(--py, 0px), 0) perspective(900px) rotateX(var(--tx, 0deg)) rotateY(var(--ty, 0deg));
-  transition: transform .7s var(--ease);
-  filter: drop-shadow(0 40px 70px rgba(0, 0, 0, .75)) drop-shadow(0 0 60px rgba(226, 191, 126, .12));
+/* The cursor tilt is written to .sphere-tilt by main.js. The shadow is a plain round box-shadow on its own
+   element, so the pearls can pulse without re-filtering the whole mark every frame. */
+.sphere-tilt { position: absolute; inset: 0; will-change: transform; }
+.sphere-shadow {
+  position: absolute; inset: 3.4%; border-radius: 50%;
+  box-shadow: 0 40px 70px rgba(0, 0, 0, .75), 0 0 60px rgba(226, 191, 126, .12);
 }
-html:not(.landed) .sphere { opacity: 0; }
+.sphere { position: relative; width: 100%; height: 100%; overflow: visible; }
+html:not(.landed) .sphere-tilt { opacity: 0; }
 html:not(.landed) .sphere-float { animation-play-state: paused; }
 /* animates `scale`, not `transform`, so the cursor tilt still works once it has faded in */
-.skip-intro.ready .sphere { animation: sphere-in 1.4s var(--ease) backwards; }
+.skip-intro.ready .sphere-tilt { animation: sphere-in 1.4s var(--ease) backwards; }
 @keyframes sphere-in { from { opacity: 0; scale: .86; } to { opacity: 1; scale: 1; } }
 .sphere .m-orb { animation: orb-glow 4.5s ease-in-out infinite; }
 .sphere .m-orb:nth-child(2) { animation-delay: -1.2s; }
 .sphere .m-orb:nth-child(3) { animation-delay: -2.4s; }
 .sphere .m-orb:nth-child(4) { animation-delay: -3.3s; }
 @keyframes orb-glow { 50% { transform: scale(1.06); filter: brightness(1.12); } }
-/* light travelling across polished metal */
-.sphere-float::after {
-  content: ""; position: absolute; inset: 4.5%; border-radius: 50%; pointer-events: none;
-  background: linear-gradient(115deg, transparent 38%, rgba(255, 244, 214, .22) 49%, transparent 60%) 160% 0 / 260% 100% no-repeat;
-  mix-blend-mode: screen;
-  opacity: 0;
+/* light travelling across polished metal: a soft band slid across a round window */
+.sheen { position: absolute; inset: 4.5%; border-radius: 50%; overflow: hidden; pointer-events: none; }
+.sheen::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(115deg, transparent 27%, rgba(255, 244, 214, .22) 50%, transparent 73%);
+  transform: translateX(-105%);
 }
-.landed .sphere-float::after { opacity: 1; animation: sheen 8s var(--ease-in-out) 1.2s infinite; }
-@keyframes sheen { 0%, 50% { background-position: 160% 0; } 85%, 100% { background-position: -60% 0; } }
+.landed .sheen::after { animation: sheen 8s linear 1.2s infinite; }
+@keyframes sheen { 0%, 60% { transform: translateX(-105%); } 76%, 100% { transform: translateX(105%); } }
 
 .orbit {
   position: absolute; left: 50%; top: 50%;
@@ -438,14 +448,34 @@ html:not(.landed) .sphere-float { animation-play-state: paused; }
   overflow: visible;
   pointer-events: none;
   opacity: 0;
-  translate: calc(var(--px, 0px) * -.3) calc(var(--py, 0px) * -.3);
-  transition: opacity 1.4s var(--ease) .3s, translate 1s var(--ease);
+  transition: opacity 1.4s var(--ease) .3s;
+  will-change: translate; /* main.js drifts the orbits against the cursor */
 }
 .ready .orbit { opacity: 1; }
+.orbit-sats { width: 100%; height: 100%; }
 .orbit path { fill: none; stroke: url(#g-bezel); stroke-width: .8; opacity: .4; }
 .orbit-back path { opacity: .22; }
-.orbit .sat { fill: #FFF1CC; filter: url(#f-glow); }
-.orbit .sat-2 { fill: #E8C98A; }
+
+/* satellites: see the note in index.html. --a is the ellipse's half-width, --k its height / width. */
+.sat-ring { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.sr-1 { --a: calc(var(--s) * .4318); --k: .3053; --t: 16s; --lag: 0s; transform: rotate(-18deg) scaleY(var(--k)); }
+.sr-2 { --a: calc(var(--s) * -.4773); --k: .219; --t: 23s; --lag: -7s; transform: rotate(26deg) scaleY(var(--k)); }
+.sat-arm, .sat-spin { position: absolute; left: 0; top: 0; width: 0; height: 0; animation: sat-turn var(--t) linear var(--lag) infinite; }
+.sat-spin { left: calc(var(--a) * -1); }
+.sr-1 .sat-arm, .sr-2 .sat-spin { animation-direction: reverse; }
+@keyframes sat-turn { to { transform: rotate(360deg); } }
+.sat {
+  --d: calc(var(--s) * .0155);
+  position: absolute; left: calc(var(--d) / -2); top: calc(var(--d) / -2); width: var(--d); height: var(--d);
+  border-radius: 50%;
+  background: #FFF1CC;
+  box-shadow: 0 0 calc(var(--s) * .012) calc(var(--s) * .002) rgba(255, 241, 204, .85);
+  transform: scaleY(calc(1 / var(--k)));
+  animation: sat-fade var(--t) linear var(--lag) infinite;
+}
+.sr-2 .sat { background: #E8C98A; box-shadow: 0 0 calc(var(--s) * .012) calc(var(--s) * .002) rgba(232, 201, 138, .85); }
+/* visible on the front arc, gone while it passes behind the mark */
+@keyframes sat-fade { 0%, 50% { opacity: 1; } 56%, 95% { opacity: 0; } 100% { opacity: 1; } }
 
 .hero-scroll {
   position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
@@ -460,6 +490,9 @@ html:not(.landed) .sphere-float { animation-play-state: paused; }
   animation: scroll-dot 2s var(--ease) infinite;
 }
 @keyframes scroll-dot { 0% { transform: translateY(0); opacity: 1; } 70% { transform: translateY(14px); opacity: 0; } 100% { opacity: 0; } }
+
+/* Sections that are off screen pause their looping animations, so they cost nothing while out of view. */
+.is-off, .is-off *, .is-off *::before, .is-off *::after { animation-play-state: paused !important; }
 
 /* ==========================================================================
    Ticker
@@ -484,7 +517,7 @@ html:not(.landed) .sphere-float { animation-play-state: paused; }
 /* ==========================================================================
    Sections
    ========================================================================== */
-.section { position: relative; padding-block: clamp(80px, 10vw, 132px); }
+.section { position: relative; padding-block: clamp(64px, 10vw, 132px); }
 .section-alt {
   background: linear-gradient(180deg, transparent, rgba(185, 138, 69, .035) 30%, rgba(46, 56, 96, .03) 70%, transparent);
 }
@@ -668,7 +701,7 @@ html:not(.landed) .sphere-float { animation-play-state: paused; }
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
 }
 .clip-meta { font: 500 11px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
-.clip h3 { margin-top: 8px; font: 500 18px/1.25 var(--sans); letter-spacing: -.02em; }
+.clip h2, .clip h3 { margin-top: 8px; font: 500 18px/1.25 var(--sans); letter-spacing: -.02em; }
 .clip p { margin-top: 6px; font-size: 14.5px; line-height: 1.55; color: var(--muted); }
 .clip-quote { font: italic 400 20px/1.3 var(--serif); color: var(--text); }
 .clip-quote::before { content: "“"; display: block; font-size: 44px; line-height: .6; margin-bottom: 6px; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
@@ -690,8 +723,8 @@ html:not(.landed) .sphere-float { animation-play-state: paused; }
     #0B0B0E;
 }
 .clip-follow .clip-media::after { display: none; }
-.clip-follow h3 { margin: 0; font: 500 26px/1.1 var(--sans); letter-spacing: -.03em; }
-.clip-follow h3 em { display: block; }
+.clip-follow h2, .clip-follow h3 { margin: 0; font: 500 26px/1.1 var(--sans); letter-spacing: -.03em; }
+.clip-follow h2 em, .clip-follow h3 em { display: block; }
 .clip-follow .clip-links a { position: relative; z-index: 1; }
 .clip-follow p { margin: 0; font-size: 14.5px; color: var(--muted); }
 .clip-follow .btn { width: 100%; height: 48px; }
@@ -719,14 +752,20 @@ html:not(.landed) .sphere-float { animation-play-state: paused; }
   mask-image: linear-gradient(180deg, #000 15%, transparent 90%);
 }
 .ghosts i {
+  position: relative; overflow: hidden;
   aspect-ratio: 9 / 16; border-radius: var(--radius);
   border: 1px dashed var(--line-2);
-  background: linear-gradient(115deg, transparent 38%, rgba(255, 244, 214, .06) 49%, transparent 60%) 160% 0 / 260% 100% no-repeat, rgba(255, 255, 255, .015);
-  animation: sheen 7s var(--ease-in-out) infinite;
+  background: rgba(255, 255, 255, .015);
 }
-.ghosts i:nth-child(2) { animation-delay: .3s; }
-.ghosts i:nth-child(3) { animation-delay: .6s; }
-.ghosts i:nth-child(4) { animation-delay: .9s; }
+.ghosts i::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(115deg, transparent 25%, rgba(255, 244, 214, .06) 50%, transparent 75%);
+  transform: translateX(-105%);
+  animation: sheen 7s linear infinite;
+}
+.ghosts i:nth-child(2)::after { animation-delay: .3s; }
+.ghosts i:nth-child(3)::after { animation-delay: .6s; }
+.ghosts i:nth-child(4)::after { animation-delay: .9s; }
 .feed-empty-copy {
   max-width: 540px; margin-inline: 8px;
   padding: clamp(28px, 4vw, 44px);
@@ -770,7 +809,7 @@ html:not(.landed) .sphere-float { animation-play-state: paused; }
 .contact-mark { width: 84px; height: 84px; margin-bottom: 26px; overflow: visible; animation: float 7s ease-in-out infinite; filter: drop-shadow(0 16px 40px rgba(0, 0, 0, .7)) drop-shadow(0 0 30px rgba(226, 191, 126, .18)); }
 .contact .sec-head h2 { font-size: clamp(2.3rem, 5.6vw, 4.6rem); }
 
-.reach { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; max-width: 1000px; margin-inline: auto; }
+.reach { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.3fr); gap: 14px; max-width: 1000px; margin-inline: auto; }
 .reach-card {
   position: relative;
   display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 16px; row-gap: 6px;
@@ -793,6 +832,7 @@ html:not(.landed) .sphere-float { animation-play-state: paused; }
 .reach-card:first-child .reach-ico svg { fill: #120D06; stroke: none; }
 .reach-k { font: 500 11px/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
 .reach-v { font-size: 17px; font-weight: 500; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.reach-email { font-size: clamp(14.5px, 4.1vw, 17px); }
 
 .brief {
   max-width: 1000px; margin: 18px auto 0;
@@ -855,8 +895,8 @@ html:not(.landed) .sphere-float { animation-play-state: paused; }
 .foot-brand .brand-word { font-size: 20px; }
 .foot-brand em { grid-column: 1 / -1; font-size: 22px; }
 .foot-cols { display: grid; grid-template-columns: repeat(3, auto); gap: 18px 64px; }
-.foot-cols h4 { margin-bottom: 14px; font: 500 11px/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
-.foot-cols a { display: block; padding: 5px 0; color: var(--muted); font-size: 15px; transition: color .3s; }
+.foot-cols h2 { margin-bottom: 14px; font: 500 11px/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.foot-cols a { display: block; padding: 6px 0; color: var(--muted); font-size: 15px; transition: color .3s; }
 .foot-cols a:hover { color: var(--text); }
 .foot-bottom {
   margin-top: 56px; padding-top: 22px; border-top: 1px solid var(--line);
@@ -924,6 +964,9 @@ html:not(.landed) .sphere-float { animation-play-state: paused; }
   .step { padding: 26px 0 30px; }
   .reach { grid-template-columns: 1fr; max-width: 560px; }
 }
+@media (max-width: 960px) and (min-width: 700px) and (min-height: 900px) {
+  .hero { align-items: center; }
+}
 @media (max-width: 860px) {
   .nav-links { display: none; }
   .nav-toggle { display: block; }
@@ -932,8 +975,8 @@ html:not(.landed) .sphere-float { animation-play-state: paused; }
 @media (max-width: 760px) {
   :root { --nav-h: 64px; }
   .brand-mark { width: 32px; height: 32px; }
-  .brand-word { font-size: 15px; }
-  .brand-word small { font-size: 6.5px; }
+  .brand-word { font-size: 16px; }
+  .brand-word small { font-size: 7.25px; margin-top: 6px; }
   .work-grid { grid-template-columns: 1fr; gap: 14px; }
   .wc-a, .wc-b, .wc-c, .wc-d, .wc-e { grid-column: auto; }
   .wc-a .work-media, .wc-b .work-media { height: auto; aspect-ratio: 16 / 11; }
@@ -947,6 +990,7 @@ html:not(.landed) .sphere-float { animation-play-state: paused; }
   .brief-row { grid-template-columns: 1fr; }
   .brief-foot .btn { width: 100%; }
   .foot-cols { grid-template-columns: repeat(2, auto); gap: 18px 48px; }
+  .foot-cols a { padding: 9px 0; }
   .dock { display: flex; }
   .footer { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
   .hero-actions .text-link { display: none; }

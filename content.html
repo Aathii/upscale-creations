@@ -20,9 +20,11 @@
   <link rel="icon" type="image/png" sizes="64x64" href="brand/favicon-64.png">
   <link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Syncopate:wght@400&family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&display=swap" rel="stylesheet">
+  <link rel="preload" href="fonts/geist.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/bodoni-moda-wordmark.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/syncopate-wordmark.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/geist-mono.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/instrument-serif-italic.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/style.css">
   <noscript><style>.reveal{opacity:1}</style></noscript>
 </head>
@@ -33,7 +35,7 @@
     <div class="container nav-inner">
       <a class="brand" href="./" aria-label="Upscale Creations home">
         <img class="brand-mark" src="brand/upscale-mark.svg" alt="">
-        <span class="brand-word">UPSCALE<small>CREATIONS</small></span>
+        <span class="brand-word">UPSCALE <small>CREATIONS</small></span>
       </a>
       <nav class="nav-links" aria-label="Primary">
         <a href="./#work">Work</a>
@@ -100,15 +102,15 @@
   <footer class="footer">
     <div class="container">
       <div class="foot-top">
-        <a class="foot-brand" href="./" aria-label="Upscale Creations home">
+        <a class="foot-brand" href="./" aria-label="Upscale Creations Elevated by design. Home">
           <img src="brand/upscale-mark.svg" alt="">
-          <span class="brand-word">UPSCALE<small>CREATIONS</small></span>
+          <span class="brand-word">UPSCALE <small>CREATIONS</small></span>
           <em>Elevated by design.</em>
         </a>
         <div class="foot-cols">
-          <div><h4>Explore</h4><a href="./#work">Work</a><a href="./#services">Services</a><a href="content.html">Content</a><a href="./#contact">Contact</a></div>
-          <div><h4>Reach us</h4><a href="tel:+14165283030">Call</a><a href="sms:+14165283030">Text</a><a href="mailto:upscalecreationsco@gmail.com">Email</a></div>
-          <div class="foot-social" data-social><h4>Follow</h4></div>
+          <div><h2>Explore</h2><a href="./#work">Work</a><a href="./#services">Services</a><a href="content.html">Content</a><a href="./#contact">Contact</a></div>
+          <div><h2>Reach us</h2><a href="tel:+14165283030">Call</a><a href="sms:+14165283030">Text</a><a href="mailto:upscalecreationsco@gmail.com">Email</a></div>
+          <div class="foot-social" data-social><h2>Follow</h2></div>
         </div>
       </div>
       <div class="foot-bottom">

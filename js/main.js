@@ -27,8 +27,10 @@ document.querySelectorAll('svg.mark-anim').forEach((svg) => {
 });
 
 /* ---------- intro ---------- */
+const announceReady = () => document.dispatchEvent(new Event('site:ready'));
 function finishIntro() {
   root.classList.add('ready', 'landed');
+  announceReady();
   document.getElementById('intro')?.remove();
 }
 
@@ -55,6 +57,7 @@ function runIntro() {
       const dy = b.top + b.height / 2 - (a.top + a.height / 2);
       intro.classList.add('leaving');
       root.classList.add('ready');
+      announceReady();
       mark.style.transition = 'transform 1s cubic-bezier(.7,0,.2,1)';
       mark.style.transform = `translate(${dx}px, ${dy}px) scale(${s})`;
       setTimeout(() => { clearTimeout(failsafe); finishIntro(); }, 1020);
@@ -94,7 +97,15 @@ const spy = new IntersectionObserver((entries) => {
     navLinks.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#' + en.target.id));
   });
 }, { rootMargin: '-45% 0px -50% 0px' });
-['work', 'services', 'contact'].forEach((id) => { const s = document.getElementById(id); if (s) spy.observe(s); });
+// sections without a nav link (hero, process) are watched too, so the highlight clears over them
+['hero', 'work', 'services', 'testimonials', 'process', 'contact'].forEach((id) => { const s = document.getElementById(id); if (s) spy.observe(s); });
+
+/* ---------- pause what is off screen ----------
+   Looping CSS animations keep costing style and paint work even when scrolled out of view; .is-off pauses them. */
+const offscreen = new IntersectionObserver((entries) => {
+  entries.forEach((en) => en.target.classList.toggle('is-off', !en.isIntersecting));
+}, { rootMargin: '120px 0px' });
+document.querySelectorAll('.hero, .ticker, main > .section, .footer').forEach((s) => offscreen.observe(s));
 
 /* ---------- reveal on scroll ----------
    Reveals replay every time something comes back into view. One observer adds .in once an element is a little
@@ -126,15 +137,23 @@ watchReveals();
 const heroCopy = document.querySelector('.hero-copy');
 if (heroCopy) watchReveal(heroCopy);
 
-/* ---------- hero starfield ---------- */
+/* ---------- hero starfield ----------
+   One canvas: drifting stars, the links between near neighbours, shooting stars, and (on hover devices) the cursor
+   tilt of the mark. Motion is timed in 60ths of a second, so it runs at the same speed on a 120 Hz screen.
+   Lines and stars are drawn in a few batches by brightness rather than one draw call each. */
 (function stars() {
   const c = document.getElementById('stars');
   const hero = document.getElementById('hero');
   if (!c || !c.getContext) return;
   const ctx = c.getContext('2d');
-  let w = 0, h = 0, pts = [], raf = 0, visible = true;
+  let w = 0, h = 0, pts = [], raf = 0, visible = true, last = 0;
   const mouse = { x: -1e4, y: -1e4 };
-  const LINK = 118;
+  const LINK = 118, REACH = 170, TAU = Math.PI * 2;
+  const batch = (n, style) => Array.from({ length: n }, (_, i) => ({ style: style((i + 0.5) / n), v: [] }));
+  const linkBatches = batch(4, (k) => `rgba(226,200,150,${(k * 0.16).toFixed(3)})`);
+  const reachBatches = batch(3, (k) => `rgba(240,214,160,${(k * 0.35).toFixed(3)})`);
+  const starBatches = batch(8, (k) => `rgba(255,244,222,${(0.405 + k * 0.495).toFixed(3)})`);
+  const into = (batches, k) => batches[Math.min(batches.length - 1, (k * batches.length) | 0)].v;
 
   function resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -145,51 +164,65 @@ if (heroCopy) watchReveal(heroCopy);
     pts = Array.from({ length: n }, () => ({
       x: Math.random() * w, y: Math.random() * h,
       vx: (Math.random() - 0.5) * 0.14, vy: (Math.random() - 0.5) * 0.14,
-      r: Math.random() * 1.2 + 0.35, t: Math.random() * Math.PI * 2,
+      r: Math.random() * 1.2 + 0.35, t: Math.random() * TAU,
     }));
   }
 
-  function draw(move) {
+  function strokeAll(batches) {
+    for (const b of batches) {
+      const v = b.v;
+      if (!v.length) continue;
+      ctx.strokeStyle = b.style;
+      ctx.beginPath();
+      for (let i = 0; i < v.length; i += 4) { ctx.moveTo(v[i], v[i + 1]); ctx.lineTo(v[i + 2], v[i + 3]); }
+      ctx.stroke();
+      v.length = 0;
+    }
+  }
+
+  // dt is the time since the last frame in 60ths of a second; 0 draws without moving anything
+  function draw(dt) {
     ctx.clearRect(0, 0, w, h);
-    for (const p of pts) {
-      if (move) {
-        p.x += p.vx; p.y += p.vy; p.t += 0.018;
+    if (dt) {
+      for (const p of pts) {
+        p.x += p.vx * dt; p.y += p.vy * dt; p.t += 0.018 * dt;
         if (p.x < -10) p.x = w + 10; else if (p.x > w + 10) p.x = -10;
         if (p.y < -10) p.y = h + 10; else if (p.y > h + 10) p.y = -10;
       }
     }
-    ctx.lineWidth = 0.6;
     for (let i = 0; i < pts.length; i++) {
       const a = pts[i];
       for (let j = i + 1; j < pts.length; j++) {
         const b = pts[j];
         const dx = a.x - b.x, dy = a.y - b.y;
         const d2 = dx * dx + dy * dy;
-        if (d2 < LINK * LINK) {
-          ctx.strokeStyle = `rgba(226,200,150,${(1 - Math.sqrt(d2) / LINK) * 0.16})`;
-          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-        }
+        if (d2 < LINK * LINK) into(linkBatches, 1 - Math.sqrt(d2) / LINK).push(a.x, a.y, b.x, b.y);
       }
       const mx = a.x - mouse.x, my = a.y - mouse.y;
       const md = Math.sqrt(mx * mx + my * my);
-      if (md < 170) {
-        ctx.strokeStyle = `rgba(240,214,160,${(1 - md / 170) * 0.35})`;
-        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(mouse.x, mouse.y); ctx.stroke();
-      }
+      if (md < REACH) into(reachBatches, 1 - md / REACH).push(a.x, a.y, mouse.x, mouse.y);
     }
-    for (const p of pts) {
-      const tw = 0.55 + Math.sin(p.t) * 0.45;
-      ctx.fillStyle = `rgba(255,244,222,${0.35 + tw * 0.55})`;
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = 0.6;
+    strokeAll(linkBatches);
+    strokeAll(reachBatches);
+    for (const p of pts) into(starBatches, 0.5 + Math.sin(p.t) * 0.5).push(p.x, p.y, p.r);
+    for (const b of starBatches) {
+      const v = b.v;
+      if (!v.length) continue;
+      ctx.fillStyle = b.style;
+      ctx.beginPath();
+      for (let i = 0; i < v.length; i += 3) { ctx.moveTo(v[i] + v[i + 2], v[i + 1]); ctx.arc(v[i], v[i + 1], v[i + 2], 0, TAU); }
+      ctx.fill();
+      v.length = 0;
     }
-    if (move) drawMeteors();
+    if (dt) drawMeteors(dt);
   }
 
   // Shooting stars: one every few seconds, high in the sky, quick, with a soft glowing head.
   const meteors = [];
-  let nextMeteor = 80 + Math.random() * 100; // frames
-  function drawMeteors() {
-    if (--nextMeteor <= 0) {
+  let nextMeteor = 80 + Math.random() * 100; // in 60ths of a second
+  function drawMeteors(dt) {
+    if ((nextMeteor -= dt) <= 0) {
       const ang = (145 + Math.random() * 22) * Math.PI / 180; // heading down and to the left
       const v = 8 + Math.random() * 5;
       meteors.push({
@@ -202,8 +235,8 @@ if (heroCopy) watchReveal(heroCopy);
     ctx.lineCap = 'round';
     for (let i = meteors.length - 1; i >= 0; i--) {
       const m = meteors[i];
-      m.x += m.vx; m.y += m.vy;
-      const k = ++m.life / m.max;
+      m.x += m.vx * dt; m.y += m.vy * dt;
+      const k = (m.life += dt) / m.max;
       if (k >= 1) { meteors.splice(i, 1); continue; }
       const a = Math.min(1, Math.sin(k * Math.PI) * 1.25); // fades in, holds, fades out
       const len = m.len * Math.min(1, m.life / 12);
@@ -216,50 +249,76 @@ if (heroCopy) watchReveal(heroCopy);
       ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(tx, ty); ctx.stroke();
       ctx.shadowColor = 'rgba(255,226,170,.9)'; ctx.shadowBlur = 10;
       ctx.fillStyle = `rgba(255,250,238,${a})`;
-      ctx.beginPath(); ctx.arc(m.x, m.y, 1.8, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(m.x, m.y, 1.8, 0, TAU); ctx.fill();
       ctx.shadowBlur = 0;
     }
   }
 
-  function loop() { draw(true); raf = requestAnimationFrame(loop); }
-  function start() { if (!raf && visible && !document.hidden && !reduceMotion) raf = requestAnimationFrame(loop); }
+  // Cursor tilt: the mark eases towards the pointer and drifts after it; the orbits drift the other way for depth.
+  // It is written straight to three elements from the frame loop, with no style recalculation for the rest of the hero.
+  const tiltEl = document.getElementById('heroTilt');
+  const orbits = [...document.querySelectorAll('#heroVisual .orbit')];
+  const aim = { x: 0, y: 0 }, at = { x: 0, y: 0 };
+  let tilting = false;
+  function tilt(dt) {
+    if (!tilting || !tiltEl) return;
+    const k = 1 - Math.pow(0.88, dt);
+    at.x += (aim.x - at.x) * k; at.y += (aim.y - at.y) * k;
+    if (Math.abs(aim.x - at.x) + Math.abs(aim.y - at.y) < 0.0004) { at.x = aim.x; at.y = aim.y; tilting = false; }
+    tiltEl.style.transform = `translate3d(${(at.x * 44).toFixed(2)}px,${(at.y * 32).toFixed(2)}px,0) perspective(900px) rotateX(${(at.y * -30).toFixed(2)}deg) rotateY(${(at.x * 40).toFixed(2)}deg)`;
+    const drift = `${(at.x * -13.2).toFixed(2)}px ${(at.y * -9.6).toFixed(2)}px`;
+    for (const o of orbits) o.style.translate = drift;
+  }
+
+  function loop(ts) {
+    const dt = last ? Math.min(3, (ts - last) / 16.667) : 1;
+    last = ts;
+    draw(dt); tilt(dt);
+    raf = requestAnimationFrame(loop);
+  }
+  // runs only while the hero is on screen, the tab is visible and the intro has lifted
+  function start() {
+    if (raf || !visible || document.hidden || reduceMotion || !root.classList.contains('ready')) return;
+    last = 0; raf = requestAnimationFrame(loop);
+  }
   function stop() { cancelAnimationFrame(raf); raf = 0; }
 
-  resize(); draw(false); start();
+  resize(); draw(0); start();
+  document.addEventListener('site:ready', start);
   let rt;
-  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { resize(); draw(false); }, 150); });
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { resize(); draw(0); }, 150); });
   document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
   new IntersectionObserver(([en]) => { visible = en.isIntersecting; visible ? start() : stop(); }).observe(hero);
 
   if (canHover) {
-    // the mark tilts towards the cursor and drifts after it; the orbits drift the other way for depth
-    const vis = document.getElementById('heroVisual');
-    const tilt = (px, py) => {
-      vis?.style.setProperty('--ty', `${px * 40}deg`);
-      vis?.style.setProperty('--tx', `${py * -30}deg`);
-      vis?.style.setProperty('--px', `${px * 44}px`);
-      vis?.style.setProperty('--py', `${py * 32}px`);
-    };
     hero.addEventListener('pointermove', (e) => {
       const r = c.getBoundingClientRect();
       mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top;
-      tilt(e.clientX / window.innerWidth - 0.5, e.clientY / window.innerHeight - 0.5);
-    });
+      aim.x = e.clientX / window.innerWidth - 0.5; aim.y = e.clientY / window.innerHeight - 0.5;
+      tilting = true;
+    }, { passive: true });
     hero.addEventListener('pointerleave', () => {
       mouse.x = mouse.y = -1e4;
-      tilt(0, 0);
+      aim.x = aim.y = 0; tilting = true;
     });
   }
 })();
 
 /* ---------- card spotlight ---------- */
 if (canHover) {
+  // at most one update per frame, however fast the pointer reports
+  let spot = null, spotFrame = 0;
   document.addEventListener('pointermove', (e) => {
     const card = e.target.closest?.('.work-card, .svc, .reach-card');
     if (!card) return;
-    const r = card.getBoundingClientRect();
-    card.style.setProperty('--mx', `${e.clientX - r.left}px`);
-    card.style.setProperty('--my', `${e.clientY - r.top}px`);
+    spot = { card, x: e.clientX, y: e.clientY };
+    if (spotFrame) return;
+    spotFrame = requestAnimationFrame(() => {
+      spotFrame = 0;
+      const r = spot.card.getBoundingClientRect();
+      spot.card.style.setProperty('--mx', `${spot.x - r.left}px`);
+      spot.card.style.setProperty('--my', `${spot.y - r.top}px`);
+    });
   }, { passive: true });
 }
 
@@ -271,7 +330,7 @@ function bindPreview(video, trigger) {
   if (canHover) {
     trigger.addEventListener('pointerenter', play);
     trigger.addEventListener('pointerleave', pause);
-  } else if (!reduceMotion) {
+  } else if (!reduceMotion && !navigator.connection?.saveData) {
     new IntersectionObserver(([en]) => (en.intersectionRatio > 0.6 ? play() : pause()), { threshold: [0, 0.6] }).observe(trigger);
   }
 }
@@ -305,7 +364,7 @@ function linkRow(links) {
   return row.childElementCount ? row : null;
 }
 
-function clipCard(item) {
+function clipCard(item, tag = 'h3') {
   const wide = item.aspect === '16:9';
   const card = el('article', `clip reveal${wide ? ' clip-wide' : ''}`);
 
@@ -329,10 +388,10 @@ function clipCard(item) {
   if (item.type === 'testimonial') {
     if (item.caption) body.append(el('p', 'clip-quote', item.caption));
     const who = [item.client, item.role].filter(Boolean).join(', ');
-    if (item.title) body.append(el('h3', '', item.title));
-    else if (who) body.append(el('h3', '', who));
+    if (item.title) body.append(el(tag, '', item.title));
+    else if (who) body.append(el(tag, '', who));
   } else {
-    if (item.title) body.append(el('h3', '', item.title));
+    if (item.title) body.append(el(tag, '', item.title));
     if (item.caption) body.append(el('p', '', item.caption));
   }
   const links = linkRow(item.links);
@@ -349,14 +408,14 @@ function clipCard(item) {
 }
 
 // Closes the content grid: a nudge to call or text, plus socials once they are set.
-function ctaCard() {
+function ctaCard(tag = 'h3') {
   const tel = document.querySelector('a[href^="tel:"]')?.getAttribute('href');
   const sms = document.querySelector('a[href^="sms:"]')?.getAttribute('href');
   const card = el('article', 'clip clip-follow reveal');
   const box = el('div', 'clip-media');
   const mark = el('img', 'clip-mark');
   mark.src = 'brand/upscale-mark.svg'; mark.alt = '';
-  const h = el('h3'); h.append('Want one for '); h.append(el('em', '', 'your brand?'));
+  const h = el(tag); h.append('Want one for '); h.append(el('em', '', 'your brand?'));
   const call = el('a', 'btn btn-glow', 'Call now'); call.href = tel || './#contact';
   const text = el('a', 'btn btn-ghost', 'Send a text'); text.href = sms || './#contact';
   box.append(mark, h, el('p', '', 'Films like these are part of every website build.'), call, text);
@@ -414,8 +473,9 @@ async function loadFeed() {
     if (!list.length) return;
     const rail = section.querySelector('[data-rail-track]');
     const track = rail || section.querySelector('[data-feed-track]');
-    list.forEach((i) => track.append(clipCard(i)));
-    if (section.dataset.feed === 'content') track.append(ctaCard());
+    const tag = section.querySelector('h1') ? 'h2' : 'h3';
+    list.forEach((i) => track.append(clipCard(i, tag)));
+    if (section.dataset.feed === 'content') track.append(ctaCard(tag));
     section.querySelector('[data-feed-empty]')?.remove();
     section.hidden = false; track.hidden = false;
     if (rail) setupRail(section);
