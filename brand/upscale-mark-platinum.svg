@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-120 -120 240 240" width="512" height="512" role="img" aria-label="Upscale Creations">
+  <!-- Upscale Creations mark, platinum: black enamel dial, three polished platinum lobes, four pearls, double bezel. -->
+  <defs>
+    <linearGradient id="eg-metal" gradientUnits="userSpaceOnUse" x1="-95" y1="-100" x2="90" y2="100">
+      <stop offset="0" stop-color="#FBFCFE"/><stop offset=".18" stop-color="#D5DAE3"/><stop offset=".38" stop-color="#8A92A3"/><stop offset=".52" stop-color="#F2F4F8"/><stop offset=".7" stop-color="#9BA3B3"/><stop offset=".86" stop-color="#5E6576"/><stop offset="1" stop-color="#C9CFDA"/>
+    </linearGradient>
+    <linearGradient id="eg-bezel" gradientUnits="userSpaceOnUse" x1="-110" y1="-110" x2="110" y2="110">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset=".3" stop-color="#AEB5C3"/><stop offset=".55" stop-color="#F4F6FA"/><stop offset=".8" stop-color="#7C8496"/><stop offset="1" stop-color="#E6E9EF"/>
+    </linearGradient>
+    <radialGradient id="eg-enamel" gradientUnits="userSpaceOnUse" cx="-30" cy="-40" r="140">
+      <stop offset="0" stop-color="#16181F"/><stop offset=".65" stop-color="#08090C"/><stop offset="1" stop-color="#030304"/>
+    </radialGradient>
+    <radialGradient id="eg-pearl" cx=".36" cy=".3" r=".75">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset=".5" stop-color="#E9EDF4"/><stop offset="1" stop-color="#A9B1C2"/>
+    </radialGradient>
+    <filter id="eg-soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.6"/></filter>
+  </defs>
+
+  <circle r="111" fill="none" stroke="url(#eg-bezel)" stroke-width="1.6"/>
+  <circle r="105.5" fill="none" stroke="url(#eg-bezel)" stroke-width=".6" opacity=".8"/>
+  <circle r="101.5" fill="url(#eg-enamel)"/>
+
+  <g fill="url(#eg-metal)">
+    <path d="M-21.1-97.5C-23-40-31.9-18.3-44.1-18.7C-55.5-19.1-69.3-40-79.5-60.1A100 100 0 0 1-21.1-97.5Z"/>
+    <path d="M51.4-85.3C33.1-49.8 21.3-16.3 22.1 9.3C23.2 42.7 42.9 58.5 76.4 63.4A100 100 0 0 0 51.4-85.3Z"/>
+    <path d="M-89 44.7C-67.3 25-53.6 18.1-38.2 18.1C-14.2 18.1-2.4 52.6-.4 99.8A100 100 0 0 1-89 44.7Z"/>
+  </g>
+  <g fill="none" stroke="#FFFFFF" stroke-width=".7" opacity=".9">
+    <path d="M-21.1-97.5C-23-40-31.9-18.3-44.1-18.7C-55.5-19.1-69.3-40-79.5-60.1A100 100 0 0 1-21.1-97.5Z"/>
+    <path d="M51.4-85.3C33.1-49.8 21.3-16.3 22.1 9.3C23.2 42.7 42.9 58.5 76.4 63.4A100 100 0 0 0 51.4-85.3Z"/>
+    <path d="M-89 44.7C-67.3 25-53.6 18.1-38.2 18.1C-14.2 18.1-2.4 52.6-.4 99.8A100 100 0 0 1-89 44.7Z"/>
+  </g>
+
+  <!-- pearls: contact shadow, body, highlight -->
+  <g fill="#000" opacity=".55" filter="url(#eg-soft)">
+    <circle cx="-3.9" cy="-55.2" r="8.6"/><circle cx="-69.9" cy="4.6" r="8"/><circle cx="-5.4" cy="-1.8" r="6.8"/><circle cx="22.9" cy="66" r="6.5"/>
+  </g>
+  <g fill="url(#eg-pearl)">
+    <circle cx="-4.7" cy="-56.7" r="8.6"/><circle cx="-70.7" cy="3.3" r="8"/><circle cx="-6.1" cy="-3" r="6.8"/><circle cx="22.2" cy="64.8" r="6.5"/>
+  </g>
+  <g fill="#FFFFFF" opacity=".9">
+    <circle cx="-7.4" cy="-59.6" r="2"/><circle cx="-73.2" cy=".6" r="1.8"/><circle cx="-8.2" cy="-5.3" r="1.5"/><circle cx="20.2" cy="62.6" r="1.4"/>
+  </g>
+</svg>
