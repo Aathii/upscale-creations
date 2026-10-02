@@ -1,6 +1,6 @@
 # Upscale Creations
 
-Company portfolio site. Static (HTML, CSS, JS). No build step. Served by GitHub Pages at https://aathii.github.io/upscale-creations/
+Company portfolio site. Static (HTML, CSS, JS). No build step. Hosted on Vercel at https://upscale-creations.vercel.app/
 
 ```
 index.html            page + the shared logo symbol (#mark)
