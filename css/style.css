@@ -407,14 +407,15 @@ em {
 @keyframes float { 50% { transform: translateY(-12px); } }
 .sphere {
   width: 100%; height: 100%; overflow: visible;
-  transform: perspective(900px) rotateX(var(--tx, 0deg)) rotateY(var(--ty, 0deg));
-  transition: transform .9s var(--ease);
+  transform: translate3d(var(--px, 0px), var(--py, 0px), 0) perspective(900px) rotateX(var(--tx, 0deg)) rotateY(var(--ty, 0deg));
+  transition: transform .7s var(--ease);
   filter: drop-shadow(0 40px 70px rgba(0, 0, 0, .75)) drop-shadow(0 0 60px rgba(226, 191, 126, .12));
 }
 html:not(.landed) .sphere { opacity: 0; }
 html:not(.landed) .sphere-float { animation-play-state: paused; }
-.skip-intro.ready .sphere { animation: sphere-in 1.4s var(--ease) both; }
-@keyframes sphere-in { from { opacity: 0; transform: scale(.86); } to { opacity: 1; transform: none; } }
+/* animates `scale`, not `transform`, so the cursor tilt still works once it has faded in */
+.skip-intro.ready .sphere { animation: sphere-in 1.4s var(--ease) backwards; }
+@keyframes sphere-in { from { opacity: 0; scale: .86; } to { opacity: 1; scale: 1; } }
 .sphere .m-orb { animation: orb-glow 4.5s ease-in-out infinite; }
 .sphere .m-orb:nth-child(2) { animation-delay: -1.2s; }
 .sphere .m-orb:nth-child(3) { animation-delay: -2.4s; }
@@ -437,7 +438,8 @@ html:not(.landed) .sphere-float { animation-play-state: paused; }
   overflow: visible;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 1.4s var(--ease) .3s;
+  translate: calc(var(--px, 0px) * -.3) calc(var(--py, 0px) * -.3);
+  transition: opacity 1.4s var(--ease) .3s, translate 1s var(--ease);
 }
 .ready .orbit { opacity: 1; }
 .orbit path { fill: none; stroke: url(#g-bezel); stroke-width: .8; opacity: .4; }

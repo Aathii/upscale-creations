@@ -8,7 +8,7 @@ const SITE = {
   social: {
     Instagram: '__INSTAGRAM_URL__',
     TikTok: 'https://www.tiktok.com/@upscalecreations',
-    YouTube: '__YOUTUBE_URL__',
+    YouTube: 'https://www.youtube.com/@upscalecreations',
   },
 };
 
@@ -185,19 +185,19 @@ if (heroCopy) watchReveal(heroCopy);
     if (move) drawMeteors();
   }
 
-  // Shooting stars: one every few seconds, high in the sky, quick and faint.
+  // Shooting stars: one every few seconds, high in the sky, quick, with a soft glowing head.
   const meteors = [];
-  let nextMeteor = 100 + Math.random() * 120; // frames
+  let nextMeteor = 80 + Math.random() * 100; // frames
   function drawMeteors() {
     if (--nextMeteor <= 0) {
       const ang = (145 + Math.random() * 22) * Math.PI / 180; // heading down and to the left
-      const v = 7 + Math.random() * 5;
+      const v = 8 + Math.random() * 5;
       meteors.push({
         x: w * (0.3 + Math.random() * 0.75), y: h * Math.random() * 0.45,
         vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, ux: Math.cos(ang), uy: Math.sin(ang),
-        len: 80 + Math.random() * 110, life: 0, max: 44 + Math.random() * 30,
+        len: 130 + Math.random() * 140, life: 0, max: 48 + Math.random() * 30,
       });
-      nextMeteor = 200 + Math.random() * 280;
+      nextMeteor = 150 + Math.random() * 220;
     }
     ctx.lineCap = 'round';
     for (let i = meteors.length - 1; i >= 0; i--) {
@@ -205,17 +205,19 @@ if (heroCopy) watchReveal(heroCopy);
       m.x += m.vx; m.y += m.vy;
       const k = ++m.life / m.max;
       if (k >= 1) { meteors.splice(i, 1); continue; }
-      const a = Math.sin(k * Math.PI) * 0.6; // fades in, then out
+      const a = Math.min(1, Math.sin(k * Math.PI) * 1.25); // fades in, holds, fades out
       const len = m.len * Math.min(1, m.life / 12);
       const tx = m.x - m.ux * len, ty = m.y - m.uy * len;
       const g = ctx.createLinearGradient(m.x, m.y, tx, ty);
-      g.addColorStop(0, `rgba(255,246,226,${a})`);
-      g.addColorStop(0.3, `rgba(240,214,160,${a * 0.4})`);
+      g.addColorStop(0, `rgba(255,248,232,${a})`);
+      g.addColorStop(0.25, `rgba(244,220,170,${a * 0.6})`);
       g.addColorStop(1, 'rgba(240,214,160,0)');
-      ctx.strokeStyle = g; ctx.lineWidth = 1.1;
+      ctx.strokeStyle = g; ctx.lineWidth = 1.7;
       ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(tx, ty); ctx.stroke();
-      ctx.fillStyle = `rgba(255,248,232,${a})`;
-      ctx.beginPath(); ctx.arc(m.x, m.y, 1.2, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowColor = 'rgba(255,226,170,.9)'; ctx.shadowBlur = 10;
+      ctx.fillStyle = `rgba(255,250,238,${a})`;
+      ctx.beginPath(); ctx.arc(m.x, m.y, 1.8, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
     }
   }
 
@@ -230,17 +232,22 @@ if (heroCopy) watchReveal(heroCopy);
   new IntersectionObserver(([en]) => { visible = en.isIntersecting; visible ? start() : stop(); }).observe(hero);
 
   if (canHover) {
-    const sphere = document.getElementById('heroSphere');
+    // the mark tilts towards the cursor and drifts after it; the orbits drift the other way for depth
+    const vis = document.getElementById('heroVisual');
+    const tilt = (px, py) => {
+      vis?.style.setProperty('--ty', `${px * 40}deg`);
+      vis?.style.setProperty('--tx', `${py * -30}deg`);
+      vis?.style.setProperty('--px', `${px * 44}px`);
+      vis?.style.setProperty('--py', `${py * 32}px`);
+    };
     hero.addEventListener('pointermove', (e) => {
       const r = c.getBoundingClientRect();
       mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top;
-      const px = e.clientX / window.innerWidth - 0.5, py = e.clientY / window.innerHeight - 0.5;
-      sphere?.style.setProperty('--ty', `${px * 16}deg`);
-      sphere?.style.setProperty('--tx', `${py * -12}deg`);
+      tilt(e.clientX / window.innerWidth - 0.5, e.clientY / window.innerHeight - 0.5);
     });
     hero.addEventListener('pointerleave', () => {
       mouse.x = mouse.y = -1e4;
-      sphere?.style.setProperty('--ty', '0deg'); sphere?.style.setProperty('--tx', '0deg');
+      tilt(0, 0);
     });
   }
 })();

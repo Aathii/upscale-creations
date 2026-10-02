@@ -17,7 +17,7 @@ brand/                logo kit (SVG mark, PNG lockups, favicon, social profile i
 ## Contact details
 
 Phone (416) 528-3030 and upscalecreationsco@gmail.com are written into `index.html` and `js/main.js`.
-TikTok is @upscalecreations. Instagram and YouTube are placeholders (`__INSTAGRAM_URL__`, `__YOUTUBE_URL__`) and stay hidden until filled in.
+TikTok and YouTube are @upscalecreations. Instagram is a placeholder (`__INSTAGRAM_URL__`) and stays hidden until filled in.
 
 The enquiry form posts to FormSubmit (`SITE.formEndpoint` in `js/main.js`), which forwards each
 submission to the email. The first submission triggers a one-time activation email; click it once.
