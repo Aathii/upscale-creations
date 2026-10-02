@@ -1,17 +1,3 @@
 {
-  "items": [
-    {
-      "id": "2026-10-01-shastha-opening-film",
-      "type": "content",
-      "title": "Opening film: Shastha Florist",
-      "caption": "A night-time glide from the street, through the front door, onto the flowers. The first five seconds of the site.",
-      "client": "Shastha Florist",
-      "date": "2026-10-01",
-      "video": "media/content/shastha-opening-film.mp4",
-      "poster": "media/content/shastha-opening-film.jpg",
-      "aspect": "9:16",
-      "tag": "Website film",
-      "links": {}
-    }
-  ]
+  "items": []
 }

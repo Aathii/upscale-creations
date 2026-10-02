@@ -21,13 +21,17 @@
   <link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
 
   <script>
-    /* The loading film plays once per tab. Returning visitors, deep links and reduced-motion users skip it. */
+    /* The loading film plays on every visit and every refresh. It skips for deep links (#section), for clicks back
+       from another page of the site, and for reduced-motion users. A refresh drops the #section the nav links leave
+       in the URL, so it always replays from the top. */
     (function () {
       var d = document.documentElement;
-      try {
-        if (sessionStorage.getItem('es-seen') === '1' || location.hash || matchMedia('(prefers-reduced-motion: reduce)').matches) d.classList.add('skip-intro');
-      } catch (e) { d.classList.add('skip-intro'); }
-      if ('scrollRestoration' in history && !d.classList.contains('skip-intro')) history.scrollRestoration = 'manual';
+      var nav = performance.getEntriesByType ? performance.getEntriesByType('navigation')[0] : null;
+      var reload = nav ? nav.type === 'reload' : !!(performance.navigation && performance.navigation.type === 1);
+      var fromSite = !reload && document.referrer.indexOf(location.origin + '/') === 0;
+      if (reload && location.hash) history.replaceState(null, '', location.pathname + location.search);
+      if (location.hash || fromSite || matchMedia('(prefers-reduced-motion: reduce)').matches) d.classList.add('skip-intro');
+      else if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
     })();
   </script>
 
@@ -35,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Syncopate:wght@400&family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-  <noscript><style>.intro{display:none}.reveal{opacity:1;transform:none}.hero [data-in]{opacity:1;transform:none}</style></noscript>
+  <noscript><style>.intro{display:none}.reveal,.hero [data-in]{opacity:1}</style></noscript>
 
   <script type="application/ld+json">
   {
@@ -111,7 +115,7 @@
       <nav class="nav-links" aria-label="Primary">
         <a href="#work">Work</a>
         <a href="#services">Services</a>
-        <a href="#content">Content</a>
+        <a href="content.html">Content</a>
         <a href="#contact">Contact</a>
       </nav>
       <div class="nav-actions">
@@ -130,7 +134,7 @@
   <nav class="menu-sheet" id="menuSheet" aria-label="Site menu" inert>
     <a href="#work">Work</a>
     <a href="#services">Services</a>
-    <a href="#content">Content</a>
+    <a href="content.html">Content</a>
     <a href="#contact">Contact</a>
     <div class="menu-actions">
       <a class="btn btn-glow" href="tel:+14165283030">Call (416) 528-3030</a>
@@ -305,23 +309,6 @@
       </div>
     </section>
 
-    <!-- CONTENT (filled from content/feed.json) -->
-    <section class="section" id="content" data-feed="content" hidden>
-      <div class="container">
-        <header class="sec-head sec-head-row reveal">
-          <div>
-            <p class="eyebrow"><span class="pulse"></span>Latest content</p>
-            <h2>Fresh from the <em>studio.</em></h2>
-          </div>
-          <div class="rail-ctrl">
-            <button class="rail-btn" type="button" data-rail="prev" aria-label="Previous">←</button>
-            <button class="rail-btn" type="button" data-rail="next" aria-label="Next">→</button>
-          </div>
-        </header>
-      </div>
-      <div class="rail" data-rail-track></div>
-    </section>
-
     <!-- TESTIMONIALS (filled from content/feed.json; stays hidden until the first one is posted) -->
     <section class="section section-alt" id="testimonials" data-feed="testimonial" hidden>
       <div class="container">
@@ -415,9 +402,9 @@
           <em>Elevated by design.</em>
         </a>
         <div class="foot-cols">
-          <div><h4>Explore</h4><a href="#work">Work</a><a href="#services">Services</a><a href="#content">Content</a><a href="#contact">Contact</a></div>
+          <div><h4>Explore</h4><a href="#work">Work</a><a href="#services">Services</a><a href="content.html">Content</a><a href="#contact">Contact</a></div>
           <div><h4>Reach us</h4><a href="tel:+14165283030">Call</a><a href="sms:+14165283030">Text</a><a href="mailto:upscalecreationsco@gmail.com">Email</a></div>
-          <div class="foot-social"><h4>Follow</h4><a href="__INSTAGRAM_URL__" target="_blank" rel="noopener">Instagram</a><a href="__TIKTOK_URL__" target="_blank" rel="noopener">TikTok</a><a href="__YOUTUBE_URL__" target="_blank" rel="noopener">YouTube</a></div>
+          <div class="foot-social"><h4>Follow</h4><a href="__INSTAGRAM_URL__" target="_blank" rel="noopener">Instagram</a><a href="https://www.tiktok.com/@upscalecreations" target="_blank" rel="noopener">TikTok</a><a href="__YOUTUBE_URL__" target="_blank" rel="noopener">YouTube</a></div>
         </div>
       </div>
       <div class="foot-bottom">

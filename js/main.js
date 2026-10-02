@@ -7,7 +7,7 @@ const SITE = {
   formEndpoint: 'https://formsubmit.co/ajax/upscalecreationsco@gmail.com',
   social: {
     Instagram: '__INSTAGRAM_URL__',
-    TikTok: '__TIKTOK_URL__',
+    TikTok: 'https://www.tiktok.com/@upscalecreations',
     YouTube: '__YOUTUBE_URL__',
   },
 };
@@ -30,7 +30,6 @@ document.querySelectorAll('svg.mark-anim').forEach((svg) => {
 function finishIntro() {
   root.classList.add('ready', 'landed');
   document.getElementById('intro')?.remove();
-  try { sessionStorage.setItem('es-seen', '1'); } catch (e) {}
 }
 
 function runIntro() {
@@ -40,25 +39,31 @@ function runIntro() {
   if (!intro || !mark || !sphere) return finishIntro();
 
   window.scrollTo(0, 0);
-  const failsafe = setTimeout(finishIntro, 7000);
-  requestAnimationFrame(() => root.classList.add('intro-play'));
+  const failsafe = setTimeout(finishIntro, 8000);
 
-  setTimeout(() => {
-    // fly the assembled mark into the hero sphere, then hand over
-    const a = mark.getBoundingClientRect();
-    const b = sphere.getBoundingClientRect();
-    const s = b.width / a.width;
-    const dx = b.left + b.width / 2 - (a.left + a.width / 2);
-    const dy = b.top + b.height / 2 - (a.top + a.height / 2);
-    intro.classList.add('leaving');
-    root.classList.add('ready');
-    mark.style.transition = 'transform 1s cubic-bezier(.7,0,.2,1)';
-    mark.style.transform = `translate(${dx}px, ${dy}px) scale(${s})`;
-    setTimeout(() => { clearTimeout(failsafe); finishIntro(); }, 1020);
-  }, 2450);
+  // Wait for the Bodoni wordmark font (at most 900ms) so UPSCALE never swaps typeface mid-animation.
+  const font = document.fonts ? document.fonts.load('400 42px "Bodoni Moda"', 'UPSCALE').catch(() => {}) : null;
+  Promise.race([font, new Promise((r) => setTimeout(r, 900))]).then(() => {
+    requestAnimationFrame(() => root.classList.add('intro-play'));
+
+    setTimeout(() => {
+      // fly the assembled mark into the hero sphere, then hand over
+      const a = mark.getBoundingClientRect();
+      const b = sphere.getBoundingClientRect();
+      const s = b.width / a.width;
+      const dx = b.left + b.width / 2 - (a.left + a.width / 2);
+      const dy = b.top + b.height / 2 - (a.top + a.height / 2);
+      intro.classList.add('leaving');
+      root.classList.add('ready');
+      mark.style.transition = 'transform 1s cubic-bezier(.7,0,.2,1)';
+      mark.style.transform = `translate(${dx}px, ${dy}px) scale(${s})`;
+      setTimeout(() => { clearTimeout(failsafe); finishIntro(); }, 1020);
+    }, 2450);
+  });
 }
 
-if (root.classList.contains('skip-intro')) finishIntro();
+// Skipped intro: hand over once the hidden state has painted, so the orbit and scroll-cue fades still run.
+if (root.classList.contains('skip-intro')) requestAnimationFrame(() => requestAnimationFrame(finishIntro));
 else runIntro();
 
 /* ---------- nav ---------- */
@@ -89,25 +94,37 @@ const spy = new IntersectionObserver((entries) => {
     navLinks.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#' + en.target.id));
   });
 }, { rootMargin: '-45% 0px -50% 0px' });
-['work', 'services', 'content', 'contact'].forEach((id) => { const s = document.getElementById(id); if (s) spy.observe(s); });
+['work', 'services', 'contact'].forEach((id) => { const s = document.getElementById(id); if (s) spy.observe(s); });
 
-/* ---------- reveal on scroll ---------- */
-const revealer = new IntersectionObserver((entries) => {
-  entries.forEach((en) => {
-    if (en.isIntersecting) { en.target.classList.add('in'); revealer.unobserve(en.target); }
+/* ---------- reveal on scroll ----------
+   Reveals replay every time something comes back into view. One observer adds .in once an element is a little
+   way on screen; the other clears it only when the element is fully off screen, so the reset is never seen. */
+const revealIn = new IntersectionObserver((entries) => {
+  let n = 0;
+  entries.forEach(({ target: t, intersectionRatio }) => {
+    if (intersectionRatio < 0.08 || t.classList.contains('in')) return;
+    // whatever comes into view together cascades in
+    if (t.classList.contains('reveal')) t.style.setProperty('--d', `${Math.min(n++, 6) * 0.08}s`);
+    t.classList.add('in');
   });
 }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
 
-function watchReveals(scope = document) {
-  scope.querySelectorAll('.reveal:not(.in)').forEach((el) => {
-    // siblings in the same grid cascade in
-    const sibs = [...el.parentElement.children].filter((c) => c.classList.contains('reveal'));
-    const i = sibs.indexOf(el);
-    if (i > 0) el.style.setProperty('--d', `${Math.min(i, 6) * 0.08}s`);
-    revealer.observe(el);
+const revealOut = new IntersectionObserver((entries) => {
+  entries.forEach(({ target: t, isIntersecting, boundingClientRect: b, rootBounds: r }) => {
+    if (isIntersecting || (!b.width && !b.height)) return; // ignore hidden (display: none) sections
+    t.classList.remove('in');
+    // left through the top: drop back in from above when scrolling up
+    t.classList.toggle('above', b.bottom <= (r ? r.top : 0));
   });
+});
+
+const watchReveal = (el) => { revealIn.observe(el); revealOut.observe(el); };
+function watchReveals(scope = document) {
+  scope.querySelectorAll('.reveal').forEach(watchReveal);
 }
 watchReveals();
+const heroCopy = document.querySelector('.hero-copy');
+if (heroCopy) watchReveal(heroCopy);
 
 /* ---------- hero starfield ---------- */
 (function stars() {
@@ -164,6 +181,41 @@ watchReveals();
       const tw = 0.55 + Math.sin(p.t) * 0.45;
       ctx.fillStyle = `rgba(255,244,222,${0.35 + tw * 0.55})`;
       ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+    }
+    if (move) drawMeteors();
+  }
+
+  // Shooting stars: one every few seconds, high in the sky, quick and faint.
+  const meteors = [];
+  let nextMeteor = 100 + Math.random() * 120; // frames
+  function drawMeteors() {
+    if (--nextMeteor <= 0) {
+      const ang = (145 + Math.random() * 22) * Math.PI / 180; // heading down and to the left
+      const v = 7 + Math.random() * 5;
+      meteors.push({
+        x: w * (0.3 + Math.random() * 0.75), y: h * Math.random() * 0.45,
+        vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, ux: Math.cos(ang), uy: Math.sin(ang),
+        len: 80 + Math.random() * 110, life: 0, max: 44 + Math.random() * 30,
+      });
+      nextMeteor = 200 + Math.random() * 280;
+    }
+    ctx.lineCap = 'round';
+    for (let i = meteors.length - 1; i >= 0; i--) {
+      const m = meteors[i];
+      m.x += m.vx; m.y += m.vy;
+      const k = ++m.life / m.max;
+      if (k >= 1) { meteors.splice(i, 1); continue; }
+      const a = Math.sin(k * Math.PI) * 0.6; // fades in, then out
+      const len = m.len * Math.min(1, m.life / 12);
+      const tx = m.x - m.ux * len, ty = m.y - m.uy * len;
+      const g = ctx.createLinearGradient(m.x, m.y, tx, ty);
+      g.addColorStop(0, `rgba(255,246,226,${a})`);
+      g.addColorStop(0.3, `rgba(240,214,160,${a * 0.4})`);
+      g.addColorStop(1, 'rgba(240,214,160,0)');
+      ctx.strokeStyle = g; ctx.lineWidth = 1.1;
+      ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(tx, ty); ctx.stroke();
+      ctx.fillStyle = `rgba(255,248,232,${a})`;
+      ctx.beginPath(); ctx.arc(m.x, m.y, 1.2, 0, Math.PI * 2); ctx.fill();
     }
   }
 
@@ -249,7 +301,6 @@ function linkRow(links) {
 function clipCard(item) {
   const wide = item.aspect === '16:9';
   const card = el('article', `clip reveal${wide ? ' clip-wide' : ''}`);
-  if (wide) card.style.width = 'clamp(300px, 84vw, 540px)';
 
   const media = el('button', `clip-media${wide ? ' wide' : ''}`);
   media.type = 'button';
@@ -290,18 +341,17 @@ function clipCard(item) {
   return card;
 }
 
-// Closes the content rail: a nudge to call or text, plus socials once they are set.
+// Closes the content grid: a nudge to call or text, plus socials once they are set.
 function ctaCard() {
   const tel = document.querySelector('a[href^="tel:"]')?.getAttribute('href');
   const sms = document.querySelector('a[href^="sms:"]')?.getAttribute('href');
   const card = el('article', 'clip clip-follow reveal');
   const box = el('div', 'clip-media');
-  const mark = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  mark.setAttribute('viewBox', '-120 -120 240 240'); mark.setAttribute('class', 'clip-mark'); mark.setAttribute('aria-hidden', 'true');
-  mark.innerHTML = '<use href="#mark"/>';
+  const mark = el('img', 'clip-mark');
+  mark.src = 'brand/upscale-mark.svg'; mark.alt = '';
   const h = el('h3'); h.append('Want one for '); h.append(el('em', '', 'your brand?'));
-  const call = el('a', 'btn btn-glow', 'Call now'); call.href = tel || '#contact';
-  const text = el('a', 'btn btn-ghost', 'Send a text'); text.href = sms || '#contact';
+  const call = el('a', 'btn btn-glow', 'Call now'); call.href = tel || './#contact';
+  const text = el('a', 'btn btn-ghost', 'Send a text'); text.href = sms || './#contact';
   box.append(mark, h, el('p', '', 'Films like these are part of every website build.'), call, text);
   const socials = Object.fromEntries(Object.entries(SITE.social).filter(([, u]) => isSet(u)).map(([k, u]) => [k.toLowerCase(), u]));
   const row = linkRow(socials);
@@ -310,7 +360,16 @@ function ctaCard() {
   return card;
 }
 
-// Footer: drop social links that have not been filled in yet.
+// [data-social] boxes are filled from SITE.social. Footer: drop social links that have not been filled in yet.
+document.querySelectorAll('[data-social]').forEach((box) => {
+  Object.entries(SITE.social).forEach(([name, url]) => {
+    if (!isSet(url)) return;
+    const a = el('a', '', name);
+    a.href = url; a.target = '_blank'; a.rel = 'noopener';
+    box.append(a);
+  });
+  if (!box.querySelector('a')) box.remove();
+});
 document.querySelectorAll('.foot-social a').forEach((a) => { if (!isSet(a.getAttribute('href'))) a.remove(); });
 document.querySelectorAll('.foot-social').forEach((col) => { if (!col.querySelector('a')) col.remove(); });
 
@@ -342,14 +401,17 @@ async function loadFeed() {
     .filter((i) => i && i.video && i.published !== false)
     .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
 
+  // Home: testimonials rail (stays hidden until the first one). Content page: grid, with an empty state until the first post.
   document.querySelectorAll('[data-feed]').forEach((section) => {
     const list = items.filter((i) => i.type === section.dataset.feed);
     if (!list.length) return;
-    const track = section.querySelector('[data-rail-track]');
+    const rail = section.querySelector('[data-rail-track]');
+    const track = rail || section.querySelector('[data-feed-track]');
     list.forEach((i) => track.append(clipCard(i)));
     if (section.dataset.feed === 'content') track.append(ctaCard());
-    section.hidden = false;
-    setupRail(section);
+    section.querySelector('[data-feed-empty]')?.remove();
+    section.hidden = false; track.hidden = false;
+    if (rail) setupRail(section);
     watchReveals(section);
   });
 }
@@ -380,7 +442,7 @@ player.addEventListener('cancel', (e) => { e.preventDefault(); closePlayer(); })
 /* ---------- enquiry form ---------- */
 const form = document.getElementById('brief');
 const note = document.getElementById('briefNote');
-form.addEventListener('submit', async (e) => {
+form?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const fd = new FormData(form);
   const name = String(fd.get('name') || '').trim();
@@ -446,12 +508,15 @@ function showSent(name) {
 }
 
 /* ---------- mobile call dock ---------- */
+// Hidden while the hero or contact section is on screen; pages without them show it straight away.
 const dock = document.getElementById('dock');
-const dockState = { hero: true, contact: false };
+const dockState = { hero: !!document.getElementById('hero'), contact: false };
+const syncDock = () => dock?.classList.toggle('show', !dockState.hero && !dockState.contact);
 const dockObs = new IntersectionObserver((entries) => {
   entries.forEach((en) => { dockState[en.target.id] = en.isIntersecting; });
-  dock.classList.toggle('show', !dockState.hero && !dockState.contact);
+  syncDock();
 }, { threshold: 0.15 });
-['hero', 'contact'].forEach((id) => dockObs.observe(document.getElementById(id)));
+['hero', 'contact'].forEach((id) => { const s = document.getElementById(id); if (s) dockObs.observe(s); });
+syncDock();
 
 document.getElementById('year').textContent = new Date().getFullYear();
