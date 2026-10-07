@@ -615,7 +615,6 @@ html:not(.landed) .sphere-float { animation-play-state: paused; }
   transition: background-color .4s, color .4s, transform .5s var(--ease), border-color .4s;
 }
 .work-card:hover .arrow { background: var(--text); color: var(--bg); border-color: var(--text); transform: rotate(45deg); }
-.work-meta .lock { letter-spacing: .1em; color: var(--muted); }
 .work-body h3 { font: 500 clamp(20px, 1.9vw, 25px)/1.15 var(--sans); letter-spacing: -.025em; }
 .work-body p { color: var(--muted); font-size: 15px; line-height: 1.55; }
 
